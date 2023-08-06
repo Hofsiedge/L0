@@ -1,0 +1,82 @@
+x-streaming-env: &streaming-env
+  CLUSTER_ID:    "${CLUSTER_ID:?}"
+  STREAMING_URL: "http://streaming:4222"
+  SUBJECT:       "${SUBJECT:?}"
+
+networks:
+  db:
+  streaming:
+
+    
+services:
+  db:
+    container_name: wb-l0-db
+    environment:
+      PGPASSWORD:        "${DB_PASSWORD:?}"
+      POSTGRES_DB:       "${DB_NAME:?}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD:?}"
+      POSTGRES_USER:     "${DB_USERNAME:?}"
+      TZ:                "Europe/Moscow"
+    expose:
+      - 5432
+    healthcheck:
+      retries: 2
+      test: [ "CMD", "pg_isready", "-q", "-d", "${DB_NAME}", "-U", "${DB_USERNAME}" ]
+      timeout: 1s
+    image: postgres:15-alpine
+    # ports:
+    #   - 5600:5432
+    networks:
+      - db
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+
+  filler:
+    build:
+      context: .
+      dockerfile: ./docker/filler.Dockerfile
+    container_name: wb-l0-filler
+    depends_on:
+      - streaming
+    environment:
+      <<: *streaming-env
+      PUBLISHER_ID: "${PUBLISHER_ID:?}"
+    networks:
+      - streaming
+
+  service:
+    build:
+      context: .
+      dockerfile: ./docker/service.Dockerfile
+    container_name: wb-l0-service
+    depends_on:
+      - db
+      - streaming
+    environment:
+      <<: *streaming-env
+      DATABASE_URL: "postgres://${DB_USERNAME:?}:${DB_PASSWORD:?}@db:5432/${DB_NAME:?}"
+      SUBSCRIBER_ID: "${SUBSCRIBER_ID:?}"
+    networks:
+      - streaming
+      - db
+    ports:
+      - 8080:80
+
+
+  streaming:
+    command: "nats-streaming-server -store file -dir data -cid ${CLUSTER_ID:?}"
+    container_name: wb-l0-streaming
+    expose:
+      - 4222
+    image: nats-streaming:0.25-alpine
+    networks:
+      - streaming
+    volumes:
+      - streaming:/data
+volumes:
+  db:
+  streaming:
+
+
+
