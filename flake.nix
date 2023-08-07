@@ -28,9 +28,11 @@
     in
       builtins.attrValues (builtins.mapAttrs pkgs.writeShellScriptBin {
         run-tests = ''
+          pushd src
           go test ./... -coverprofile=cover.out
           go tool cover -html=cover.out -o cover.html
           rm cover.out
+          popd
         '';
       });
     back = with pkgs; [go_1_20 gopls delve];

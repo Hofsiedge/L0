@@ -17,13 +17,15 @@ type CommonStanConfig struct {
 type FillerConfig struct {
 	CommonStanConfig        // StanURL, StanSubject, StanCluster
 	StanClient       string `env:"PUBLISHER_ID" env-description:"NATS-Streaming client id"  env-required:"true"`
+	DataDir          string `env:"DATA_DIR"     env-description:"path to messages"          env-required:"true"`
 }
 
 // config of the main service
 type ServiceConfig struct {
 	CommonStanConfig        // StanURL, StanSubject, StanCluster
-	StanClient       string `env:"SUBSCRIBER_ID" env-description:"NATS-Streaming client id"  env-required:"true"`
-	DatabaseURL      string `env:"DATABASE_URL"  env-description:"postgres connection URL"   env-required:"true"`
+	StanClient       string `env:"SUBSCRIBER_ID" env-description:"NATS-Streaming client id"         env-required:"true"`
+	StanDurableName  string `env:"DURABLE_NAME"  env-description:"name of the durable subscription" env-required:"true"`
+	DatabaseURL      string `env:"DATABASE_URL"  env-description:"postgres connection URL"          env-required:"true"`
 }
 
 // read config from environment variables

@@ -41,9 +41,12 @@ services:
       - streaming
     environment:
       <<: *streaming-env
+      DATA_DIR:     "/data"
       PUBLISHER_ID: "${PUBLISHER_ID:?}"
     networks:
       - streaming
+    volumes:
+      - ./filler_data:/data:ro
 
   service:
     build:
@@ -55,7 +58,8 @@ services:
       - streaming
     environment:
       <<: *streaming-env
-      DATABASE_URL: "postgres://${DB_USERNAME:?}:${DB_PASSWORD:?}@db:5432/${DB_NAME:?}"
+      DATABASE_URL:  "postgres://${DB_USERNAME:?}:${DB_PASSWORD:?}@db:5432/${DB_NAME:?}"
+      DURABLE_NAME:  "main-service-subscription"
       SUBSCRIBER_ID: "${SUBSCRIBER_ID:?}"
     networks:
       - streaming

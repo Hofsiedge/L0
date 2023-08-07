@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/nats-io/stan.go"
 	"gitlab.com/Hofsiedge/l0/internal/config"
+	"gitlab.com/Hofsiedge/l0/internal/domain"
 )
 
 func main() {
@@ -28,7 +30,7 @@ func main() {
 		err = fmt.Errorf("could not connect to a NATS Streaming server: %w", err)
 		log.Fatal(err)
 	}
-	log.Println("connected to NATS Streaming server")
+	log.Println("connected to NATS-Streaming server")
 	defer func() {
 		sc.Close()
 		log.Println("closed NATS-Streaming connection")
@@ -42,11 +44,15 @@ func main() {
 	log.Println("connected to postgres")
 	defer conn.Close(context.Background())
 
-	// TODO: receive all new messages or from last received?
 	sub, err := sc.Subscribe(cfg.StanSubject, func(msg *stan.Msg) {
 		data := msg.Data
-		log.Printf("received a message: %v\n", data)
-	}, stan.DeliverAllAvailable())
+		var order domain.Order
+		if err := json.Unmarshal(data, &order); err != nil {
+			log.Printf("could not unmarshal a message: %v", data)
+			return
+		}
+		log.Printf("received a message with an Order: %v\n", order)
+	}, stan.DurableName(cfg.StanDurableName))
 	if err != nil {
 		err = fmt.Errorf("could not subscribe to subject %v: %w", cfg.StanSubject, err)
 		log.Fatal(err)

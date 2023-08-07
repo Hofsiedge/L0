@@ -2,11 +2,45 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"os"
+	"path"
+	"strings"
+
+	_ "embed"
 
 	"github.com/nats-io/stan.go"
 	"gitlab.com/Hofsiedge/l0/internal/config"
 )
+
+// read messages from cfg.DataDir. skips files on errors.
+func readMessages(cfg config.FillerConfig) ([][]byte, error) {
+	messages := make([][]byte, 0)
+	entries, err := os.ReadDir(cfg.DataDir)
+	if err != nil {
+		return nil, fmt.Errorf("could not read the messages: %w", err)
+	}
+	for _, entry := range entries {
+		filePath := path.Join(cfg.DataDir, entry.Name())
+		if entry.IsDir() || !strings.HasSuffix(filePath, ".json") {
+			log.Printf("skipping %v", filePath)
+			continue
+		}
+		file, err := os.Open(filePath)
+		if err != nil {
+			log.Printf("could not read %s, skipping", filePath)
+			continue
+		}
+		message, err := io.ReadAll(file)
+		if err != nil {
+			log.Printf("IO error reading %v, skipping", err)
+			continue
+		}
+		messages = append(messages, message)
+	}
+	return messages, nil
+}
 
 func main() {
 	cfg, err := config.Read[config.FillerConfig]()
@@ -27,10 +61,12 @@ func main() {
 		sc.Close()
 		log.Println("closed connection")
 	}()
-	messages := []string{
-		"Message 1",
-		"This one is a bit longer",
+
+	messages, err := readMessages(cfg)
+	if err != nil {
+		log.Fatal(err)
 	}
+
 	log.Println("publishing messages...")
 	for _, msg := range messages {
 		err = sc.Publish(cfg.StanSubject, []byte(msg))
