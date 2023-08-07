@@ -2,17 +2,17 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 
+	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5"
 	"github.com/nats-io/stan.go"
 	"gitlab.com/Hofsiedge/l0/internal/config"
-	"gitlab.com/Hofsiedge/l0/internal/domain"
+	"gitlab.com/Hofsiedge/l0/internal/repo/postgres"
+	"gitlab.com/Hofsiedge/l0/internal/server"
 )
 
 func main() {
@@ -21,11 +21,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	opts := []stan.Option{
-		stan.NatsURL(cfg.StanURL),
-	}
-	log.Printf("connecting, %v", cfg)
-	sc, err := stan.Connect(cfg.StanCluster, cfg.StanClient, opts...)
+	// stan connection
+	sc, err := stan.Connect(cfg.StanCluster, cfg.StanClient, stan.NatsURL(cfg.StanURL))
 	if err != nil {
 		err = fmt.Errorf("could not connect to a NATS Streaming server: %w", err)
 		log.Fatal(err)
@@ -36,6 +33,7 @@ func main() {
 		log.Println("closed NATS-Streaming connection")
 	}()
 
+	// postgresql connection
 	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		err = fmt.Errorf("could not connect to postgres: %w", err)
@@ -44,21 +42,20 @@ func main() {
 	log.Println("connected to postgres")
 	defer conn.Close(context.Background())
 
-	sub, err := sc.Subscribe(cfg.StanSubject, func(msg *stan.Msg) {
-		data := msg.Data
-		var order domain.Order
-		if err := json.Unmarshal(data, &order); err != nil {
-			log.Printf("could not unmarshal a message: %v", data)
-			return
-		}
-		log.Printf("received a message with an Order: %v\n", order)
-	}, stan.DurableName(cfg.StanDurableName))
+	srv, err := server.NewServer(new(postgres.MockOrders))
+	if err != nil {
+		err = fmt.Errorf("failed to create a server: %w", err)
+		log.Fatal(err)
+	}
+
+	// subscription
+	srv.Stan, err = sc.Subscribe(cfg.StanSubject, srv.HandleMessage, stan.DurableName(cfg.StanDurableName))
 	if err != nil {
 		err = fmt.Errorf("could not subscribe to subject %v: %w", cfg.StanSubject, err)
 		log.Fatal(err)
 	}
 	defer func() {
-		if err = sub.Close(); err != nil {
+		if err = srv.Stan.Close(); err != nil {
 			err = fmt.Errorf("failed subscription closing: %w", err)
 			log.Fatal(err)
 		} else {
@@ -67,16 +64,10 @@ func main() {
 	}()
 	log.Println("subscribed, ready to read")
 
-	// TODO: http handler
-	// TODO: http server
+	r := mux.NewRouter()
+	s := r.PathPrefix("/api/v1/order").Subrouter()
+	s.HandleFunc("/", srv.ListEndpoint).Methods("GET")
+	s.HandleFunc("/{id}", srv.GetByIdEndpoint).Methods("GET")
 
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	// TODO: uncomment go when http server is implemented
-	// go
-	func() {
-		<-c
-		log.Println("shutting down")
-		os.Exit(0)
-	}()
+	log.Fatal(http.ListenAndServe("0.0.0.0:80", r))
 }
