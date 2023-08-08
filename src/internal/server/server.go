@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,34 +11,24 @@ import (
 	"github.com/nats-io/stan.go"
 	"gitlab.com/Hofsiedge/l0/internal/domain"
 	"gitlab.com/Hofsiedge/l0/internal/repo"
+	"gitlab.com/Hofsiedge/l0/internal/repo/cache"
 )
 
+// server uses cache internally
 type Server struct {
 	Orders repo.Repo[domain.Order, string]
 	Stan   stan.Subscription
-	Cache  map[string]domain.Order
 }
 
 func NewServer(orders repo.Repo[domain.Order, string]) (*Server, error) {
-	srv := Server{
-		Orders: orders,
-		Cache:  make(map[string]domain.Order),
-	}
-	if err := srv.FillCache(); err != nil {
+	orderCache, err := cache.New(orders)
+	if err != nil {
 		return nil, err
 	}
+	srv := Server{
+		Orders: orderCache,
+	}
 	return &srv, nil
-}
-
-func (s *Server) FillCache() error {
-	orders, err := s.Orders.GetAll()
-	if err != nil {
-		return err
-	}
-	for _, order := range orders {
-		s.Cache[order.OrderUid] = order
-	}
-	return nil
 }
 
 func (s *Server) HandleMessage(msg *stan.Msg) {
@@ -52,11 +43,15 @@ func (s *Server) HandleMessage(msg *stan.Msg) {
 		err = fmt.Errorf("error saving an order: %w", err)
 		log.Println(err)
 	}
-	s.Cache[order.OrderUid] = order
 }
 
 func (s *Server) ListEndpoint(response http.ResponseWriter, request *http.Request) {
-	data, err := json.Marshal(s.Cache)
+	orders, err := s.Orders.List()
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		log.Print(err)
+	}
+	data, err := json.Marshal(orders)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		err = fmt.Errorf("error marshalling cache: %w", err)
@@ -73,9 +68,13 @@ func (s *Server) GetByIdEndpoint(response http.ResponseWriter, request *http.Req
 		response.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	order, ok := s.Cache[id]
-	if !ok {
-		response.WriteHeader(http.StatusNotFound)
+	order, err := s.Orders.Get(id)
+	if err != nil {
+		if errors.Is(err, cache.ErrorNotFound) {
+			response.WriteHeader(http.StatusNotFound)
+		} else {
+			response.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 	data, err := json.Marshal(order)

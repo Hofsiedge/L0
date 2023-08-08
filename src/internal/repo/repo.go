@@ -1,15 +1,16 @@
 package repo
 
 // generic repo. T - main type, I - id type
-type Repo[T any, I any] interface {
+type Repo[T any, I comparable] interface {
 	Get(id I) (T, error)
 	List() ([]I, error)
 	GetAll() ([]T, error)
 	Save(T) error
+	GetKey(T) I // GetKey is usually concrete
 }
 
 // &Mock[T, I] implements repo.Repo[T, I]
-type Mock[T any, I any] struct {
+type Mock[T any, I comparable] struct {
 }
 
 func (o *Mock[T, I]) Close() error {

@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -13,6 +14,8 @@ import (
 )
 
 const uuidPlaceholder = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+
+var ErrorNotImplemented = errors.New("not implemented")
 
 type ItemRecord domain.Item
 
@@ -47,16 +50,20 @@ func NewOrderRepo(dbURL string) (*Orders, error) {
 	return &orders, err
 }
 
+func (o *Orders) GetKey(order domain.Order) string {
+	return order.OrderUid
+}
+
 func (o *Orders) Close() error {
 	return o.conn.Close(context.Background())
 }
 
 func (o *Orders) Get(id string) (domain.Order, error) {
-	return domain.Order{}, nil
+	return domain.Order{}, ErrorNotImplemented
 }
 
 func (o *Orders) List() ([]string, error) {
-	return make([]string, 0), nil
+	return make([]string, 0), ErrorNotImplemented
 }
 
 func (o *Orders) GetAll() ([]domain.Order, error) {
