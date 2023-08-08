@@ -2,7 +2,6 @@ FROM golang:1.20-alpine AS builder
 
 WORKDIR /app
 COPY src/go.mod src/go.sum ./
-# RUN apk update && apk upgrade &&
 RUN go mod download && go mod verify
 
 COPY src .

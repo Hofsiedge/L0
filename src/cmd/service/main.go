@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v5"
 	"github.com/nats-io/stan.go"
 	"gitlab.com/Hofsiedge/l0/internal/config"
 	"gitlab.com/Hofsiedge/l0/internal/repo/postgres"
@@ -33,16 +30,13 @@ func main() {
 		log.Println("closed NATS-Streaming connection")
 	}()
 
-	// postgresql connection
-	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	// srv, err := server.NewServer(new(repo.Mock[domain.Order, string]))
+	repo, err := postgres.NewOrderRepo(cfg.DatabaseURL)
 	if err != nil {
-		err = fmt.Errorf("could not connect to postgres: %w", err)
 		log.Fatal(err)
 	}
-	log.Println("connected to postgres")
-	defer conn.Close(context.Background())
-
-	srv, err := server.NewServer(new(postgres.MockOrders))
+	defer repo.Close()
+	srv, err := server.NewServer(repo)
 	if err != nil {
 		err = fmt.Errorf("failed to create a server: %w", err)
 		log.Fatal(err)

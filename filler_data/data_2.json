@@ -1,11 +1,11 @@
 {
-  "order_uid": "jsl3feb2b7b86babuzz",
+  "order_uid": "7df06252-11d3-4df8-af37-864b66b24723",
   "track_number": "WBILMTESTTRACK-2",
   "entry": "WBIL",
   "delivery": {
     "name": "John Doe",
-    "phone": "+9280090000",
-    "zip": "1089827",
+    "phone": "+79280090000",
+    "zip": "108927",
     "city": "Qux",
     "address": "J 15",
     "region": "Ma Pona",
@@ -16,11 +16,11 @@
     "request_id": "",
     "currency": "RUB",
     "provider": "wbpay",
-    "amount": 1457,
+    "amount": 1557,
     "payment_dt": 1697108093,
     "bank": "tinkoff",
     "delivery_cost": 800,
-    "goods_total": 657,
+    "goods_total": 757,
     "custom_fee": 0
   },
   "items": [
@@ -33,6 +33,19 @@
       "sale": 5,
       "size": "0",
       "total_price": 657,
+      "nm_id": 3190183,
+      "brand": "Ilo Mute",
+      "status": 202
+    },
+    {
+      "chrt_id": 2829872,
+      "track_number": "WBILMTESTTRACK",
+      "price": 100,
+      "rid": "q579s985ahasfh0g347",
+      "name": "Telo Musi",
+      "sale": 0,
+      "size": "0",
+      "total_price": 100,
       "nm_id": 3190183,
       "brand": "Ilo Mute",
       "status": 202

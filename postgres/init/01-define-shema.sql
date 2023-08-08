@@ -1,7 +1,6 @@
 create schema L0;
 
 create type L0.locale_value as enum ('ru', 'en');
-create type L0.delivery_service_value as enum ('service_1', 'service_2');
 create type L0.currency as enum ('RUB', 'USD', 'EUR', 'CNY');
 
 
@@ -13,7 +12,7 @@ create table L0.delivery (
 	city        text not null check(length(city) between 1 and 500),
 	address     text not null check(length(address) between 1 and 500),
 	region      text not null check(length(region) between 1 and 100),
-	email       text not null check(email ~ '^[\w\.-]+@([\w-]\.)+\w+$')
+	email       text not null check(email ~ '^[\w\.-]+@([\w-]+\.)+\w+$')
 );
 
 create table L0.item (
@@ -48,13 +47,6 @@ create table L0.payment (
 	custom_fee int not null check (custom_fee >= 0)
 );
 
-create table L0.customer (
-	customer_id uuid primary key default(gen_random_uuid()),
-	name text not null,
-	phone text not null unique check(phone ~ '^\+\d{11}$'),
-	email text not null unique check(email ~ '^[\w\.-]+@([\w-]\.)+\w+$')
-);
-
 create table L0.orders (
 	order_uid uuid primary key default(gen_random_uuid()),
 	track_number text unique not null,
@@ -62,17 +54,16 @@ create table L0.orders (
 	delivery_id uuid not null,
 	payment_id uuid,
     locale L0.locale_value not null,
-    internal_signature varchar(100),
-    customer_id uuid,
-    delivery_service L0.delivery_service_value not null,
-    shard_key int not null,
+    internal_signature text,
+    customer_id text,
+    delivery_service text not null,
+    shard_key text not null,
     sm_id int not null,
     date_created timestamp not null,
-    oof_shard int not null,
+    oof_shard text not null,
     
     foreign key (delivery_id) references L0.delivery(delivery_id),
-    foreign key (payment_id) references L0.payment(payment_id),
-	foreign key (customer_id) references L0.customer(customer_id)
+    foreign key (payment_id) references L0.payment(payment_id)
 );
 
 

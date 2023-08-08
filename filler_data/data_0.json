@@ -1,11 +1,11 @@
 {
-  "order_uid": "b563feb7b2b84b6test",
+  "order_uid": "20354d7a-e4fe-47af-8ff6-187bca92f3f9",
   "track_number": "WBILMTESTTRACK",
   "entry": "WBIL",
   "delivery": {
     "name": "Test Testov",
-    "phone": "+9720000000",
-    "zip": "2639809",
+    "phone": "+79720000000",
+    "zip": "263809",
     "city": "Kiryat Mozkin",
     "address": "Ploshad Mira 15",
     "region": "Kraiot",
