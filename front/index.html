@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>WB L0 Form</title>
+    <link rel="stylesheet" href="/style.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  </head>
+  <body>
+  <div x-data="{
+      availableOrders: [],
+      async listOrders() {
+        this.availableOrders = await fetch('/api/v1/order/').then(r => r.json())
+      },
+      currentOrder: null,
+      async loadOrder(id) {
+        this.currentOrder = await fetch('/api/v1/order/' + id).then(r => r.json())
+      }
+    }"
+    x-effect="console.log(currentOrder)"
+    x-init="listOrders()">
+    <button @click="listOrders()" class="">Reload orders</button>
+    <div class="uid-boxes">
+      <template x-for="orderUid in availableOrders">
+        <button x-text="orderUid" x-on:click="loadOrder(orderUid)"></button>
+      </template>
+    </div>
+    <template  x-if="currentOrder !== null">
+    <div class="order-box">
+      <div class="section-data">
+        <div class="section-title">Delivery Info</div>
+        <template x-for="[key, name] in Object.entries({
+          name:   'Name', 
+          phone:  'Phone',
+          zip:    'Zip-code',
+          city:   'City',
+          region: 'Region',
+          email:  'Email'
+        })">
+          <div>
+            <span x-text="name + ':'"></span>
+            <span x-text="currentOrder.delivery[key]"></span>
+          </div>
+        </template>
+      </div>
+
+      <div class="section-data">
+        <div class="section-title">Payment Info</div>
+        <template x-for="[key, name] in Object.entries({
+          amount:        'Amount',
+          bank:          'Bank',
+          currency:      'Currency',
+          custom_fee:    'Custom fee',
+          delivery_cost: 'Delivery cost',
+          goods_total:   'Goods Total',
+          payment_dt:    'Payment time',
+          provider:      'Provider',
+          request_id:    'Request ID',
+          transaction:   'Transaction'
+        })">
+          <div>
+            <span x-text="name + ':'"></span>
+            <span x-text="currentOrder.payment[key]"></span>
+          </div>
+        </template>
+      </div>
+      
+      <div class="section-data">
+        <div class="section-title">Order Info</div>
+        <template x-for="[key, name] in Object.entries({
+          customer_id:        'Customer ID',
+          date_created:       'Creation Date',
+          delivery_service:   'Delivery Service',
+          entry:              'Entry',
+          internal_signature: 'Internal Signature',
+          locale:             'Locale',
+          oof_shard:          'Shard OOF',
+          order_uid:          'Order UID',
+          shardkey:           'Shard Key',
+          sm_id:              'SM ID',
+          track_number:       'Track Number'
+        })">
+        <div>
+          <span x-text="name + ':'"></span>
+          <span x-text="currentOrder[key]"></span>
+        </div>
+        </template>
+      </div>
+
+      <div class="section-data">
+        <div class="section-title">Items</div>
+        <template x-for="item in currentOrder.items">
+        <div class="items-wrapper">
+          <template x-for="[key, name] in Object.entries({
+            brand: 'Brand',
+            chrt_id: 'Vendor code',
+            name: 'Name',
+            nm_id: 'NM ID',
+            price: 'Price',
+            rid: 'Item ID',
+            sale: 'Sale',
+            size: 'Size',
+            status: 'Status',
+            total_price: 'Total Price',
+            track_number: 'Track Number'
+          })">
+          <div>
+            <span x-text="name + ':'"></span>
+            <span x-text="item[key]"></span>
+          </div>
+          </template>
+        </div>
+        <div class="items-separator"></div>
+        </template>
+      </div>
+
+    </div>
+    </template>
+  </div>
+  </body>
+</html>

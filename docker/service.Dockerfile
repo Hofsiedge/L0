@@ -10,4 +10,5 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o mai
 FROM scratch
 WORKDIR /
 COPY --from=builder /app/main /app
+# COPY front /static
 CMD ["/app"]

@@ -26,6 +26,7 @@ type ServiceConfig struct {
 	StanClient       string `env:"SUBSCRIBER_ID" env-description:"NATS-Streaming client id"         env-required:"true"`
 	StanDurableName  string `env:"DURABLE_NAME"  env-description:"name of the durable subscription" env-required:"true"`
 	DatabaseURL      string `env:"DATABASE_URL"  env-description:"postgres connection URL"          env-required:"true"`
+	StaticDir        string `env:"STATIC_DIR"    env-description:"directory with static files"      env-required:"true"`
 }
 
 // read config from environment variables

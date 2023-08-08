@@ -62,6 +62,8 @@ func main() {
 	s := r.PathPrefix("/api/v1/order").Subrouter()
 	s.HandleFunc("/", srv.ListEndpoint).Methods("GET")
 	s.HandleFunc("/{id}", srv.GetByIdEndpoint).Methods("GET")
+	r.PathPrefix("/").Handler(
+		http.StripPrefix("/", http.FileServer(http.Dir(cfg.StaticDir))))
 
 	log.Fatal(http.ListenAndServe("0.0.0.0:80", r))
 }

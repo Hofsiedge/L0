@@ -60,6 +60,7 @@ services:
       <<: *streaming-env
       DATABASE_URL:  "postgres://${DB_USERNAME:?}:${DB_PASSWORD:?}@db:5432/${DB_NAME:?}"
       DURABLE_NAME:  "main-service-subscription"
+      STATIC_DIR:    "/static"
       SUBSCRIBER_ID: "${SUBSCRIBER_ID:?}"
     networks:
       - streaming
@@ -67,6 +68,9 @@ services:
     ports:
       - 8080:80
     restart: always
+    volumes:
+      # TODO: remove later
+      - ./front:/static:ro
 
 
   streaming:
