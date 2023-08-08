@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	_ "embed"
 
@@ -66,6 +67,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	log.Println("waiting before publishing")
+
+	time.Sleep(20 * time.Second)
 
 	log.Println("publishing messages...")
 	for _, msg := range messages {
