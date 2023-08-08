@@ -18,7 +18,7 @@ type ItemRecord domain.Item
 
 func (i ItemRecord) Value() (driver.Value, error) {
 	record := fmt.Sprintf(
-		`('%s', %d, %d, '%s', '%s', '%s', '%s', %d, %d, %d, %d)`,
+		`("%s",%d,%d,"%s","%s","%s","%s",%d,%d,%d,%d)`,
 		i.RId, i.ChrtId, i.NmId, i.Name, i.Brand, i.Size,
 		i.TrackNumber, i.Price, i.Sale, i.TotalPrice, i.Status)
 	return record, nil
@@ -60,7 +60,26 @@ func (o *Orders) List() ([]string, error) {
 }
 
 func (o *Orders) GetAll() ([]domain.Order, error) {
-	return make([]domain.Order, 0), nil
+	orders := make([]domain.Order, 0)
+
+	rows, err := o.conn.Query(
+		context.Background(),
+		`select order_data from l0.get_all_orders();`)
+	if err != nil {
+		err = fmt.Errorf("error reading orders: %w", err)
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var order domain.Order
+		if err := rows.Scan(&order); err != nil {
+			err = fmt.Errorf("error scanning an Order: %w", err)
+			return nil, err
+		}
+		orders = append(orders, order)
+	}
+	log.Printf("read %d orders from the database\n", len(orders))
+	return orders, nil
 }
 
 // this is the ugliest code I've ever written

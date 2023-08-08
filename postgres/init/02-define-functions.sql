@@ -64,7 +64,6 @@ begin
 end;
 $$;
 
--- array[('a3478fadkj276285762', 1726892, 3190183, 'Ilo Sewi', 'Ilo Mute', '0', 'WBILMTESTTRACK', 692, 5, 657, 202)::l0.item]::l0.item[]
 -- example usage
 /*
 select l0.save_order(
@@ -93,3 +92,43 @@ select l0.save_order(
 	]::l0.item[]
 );
 */
+
+
+create or replace function l0.get_all_orders() 
+   returns table (order_data json)
+   language plpgsql
+  as
+$$
+begin
+	return query
+	with order_to_item_data as (
+		select oi.order_uid, jsonb_agg(to_jsonb(i)) items
+		from l0.orders_items oi
+		join l0.item i on oi.item_rid = i.rid
+		group by oi.order_uid
+	),
+	prepared_data as (
+		select
+			o.order_uid,
+			o.track_number,
+			o.entry,
+			otid.items,
+			to_jsonb(d) - 'delivery_id' delivery,
+			(to_jsonb(p) - 'payment_id') || jsonb_build_object('payment_dt', extract(epoch from p.payment_dt)::int) payment,
+			o.locale,
+			o.internal_signature,
+			o.customer_id,
+			o.delivery_service,
+			o.shard_key,
+			o.sm_id,
+			to_char(o.date_created, 'YYYY-MM-DD"T"HH24:MI:SSOF'),
+			o.oof_shard
+		from l0.orders o
+		join order_to_item_data otid on o.order_uid = otid.order_uid
+		join l0.delivery d on d.delivery_id = o.delivery_id
+		join l0.payment p on p.payment_id = o.payment_id
+	)
+	select row_to_json(d) as order_data
+	from prepared_data d;
+end;
+$$;
