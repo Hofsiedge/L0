@@ -38,14 +38,13 @@ func Read[T ServiceConfig | FillerConfig]() (T, error) {
 		err error
 	)
 	if err = cleanenv.ReadEnv(&cfg); err != nil {
-		// TODO: open an issue at cleanenv: cleanenv.GetDescription can't handle generic types :\
-		/*
-			helpHeader := "Expected config:"
-			if help, descErr := cleanenv.GetDescription(cfg, &helpHeader); descErr == nil {
-				log.Println(help)
-			}
-		*/
-		err = fmt.Errorf("could not read config: %w", err)
+		helpHeader := "Expected config:"
+		help, descErr := cleanenv.GetDescription(&cfg, &helpHeader)
+		if descErr == nil {
+			err = fmt.Errorf("could not read config: %w.\n%s", err, help)
+		} else {
+			err = fmt.Errorf("could not read config: %w", err)
+		}
 	}
 	return cfg, err
 }
