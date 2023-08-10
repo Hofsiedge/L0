@@ -1,3 +1,7 @@
+body {
+  font-family: 'Roboto Mono', monospace;
+}
+
 .outer {
   display: flex;
   flex-direction: row;
@@ -14,9 +18,35 @@
   color: black;
   border: 1px solid black;
 }
+.menu button.active {
+  background-color: #f44336;
+  color: white;
+  border-color:  #f44336;
+  font-weight: bold;
+}
+
+.menu button>b {
+  transition-duration: 0.2s;
+  color: #f44336;
+}
+.menu button.active>b {
+  color: white;
+}
 
 .menu button:hover {
   border-color: red;
+}
+
+.menu input {
+  transition-duration: 0.2s;
+  margin-bottom: 1em;
+  padding: 0.5em;
+  border: 1px solid black;
+  text-align: center;
+}
+.menu input:focus {
+  border-color: #f44336;
+  outline: none;
 }
 
 .reload-btn {
@@ -36,17 +66,11 @@
   border-radius: 0;
 }
 
-.menu button.active {
-  background-color: #f44336;
-  color: white;
-  border-color:  #f44336;
-  font-weight: bold;
-}
-
 .section-title {
   font-weight: bold;
   text-align: center;
   margin-bottom: 1em;
+  margin-top: 0;
 }
 
 .section-data {
@@ -55,6 +79,7 @@
   border: 1px solid black;
   border-radius: 0.5em;
   max-width: 400px;
+  box-shadow: 0.1em 0.1em 0.1em gray;
 }
 
 .section-values {
@@ -73,5 +98,6 @@
   border-radius: 0.5em;
   padding: 1em;
   margin-bottom: 0.5em;
+  box-shadow: 0.1em 0.1em 0.1em gray;
 }
 

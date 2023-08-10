@@ -7,48 +7,69 @@
     <title>WB L0 Form</title>
     <link rel="stylesheet" href="/style.css">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/fuzzysort@2.0.4/fuzzysort.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
   </head>
   <body>
   <script src="/index.js"></script>
   <div class="outer" x-data="{
       availableOrders: [],
+      currentOrder: null,
+      filterString: '',
+      visibleOrders: [],
+
       async listOrders() {
         this.availableOrders = await fetch('/api/v1/order/').then(r => r.json())
+        this.availableOrders.sort((a, b) => a.localeCompare(b))
         if (!this.availableOrders.includes(this.currentOrder?.order_uid)) {
           this.currentOrder = null;
         }
+        this.filterOrderIds()
       },
-      currentOrder: null,
+
       async loadOrder(id) {
         this.currentOrder = await fetch('/api/v1/order/' + id).then(r => r.json())
+      },
+
+      filterOrderIds() {
+        this.visibleOrders = fuzzysort.go(this.filterString, this.availableOrders, {
+          all: true,
+        }).map(x => ({
+          uid: x.target,
+          hl:  fuzzysort.highlight(x, '<b>', '</b>'),
+        }))
       }
     }"
     x-effect="console.log(currentOrder)"
-    x-init="listOrders()">
-
+    x-init="listOrders()"
+  >
     <div class="menu">
       <button class="reload-btn" @click="listOrders()">Reload orders</button>
 
+      <input type="search" placeholder="order-uid" x-model="filterString" @input="filterOrderIds()"></input>
+
       <div class="uid-boxes">
-        <template x-for="orderUid in availableOrders">
+        <template x-for="order in visibleOrders">
           <button
-            x-text="orderUid"
-            @click="loadOrder(orderUid)"
-            x-bind:class="orderUid === currentOrder.order_uid && 'active'"
+            x-html="order.hl"
+            @click="loadOrder(order.uid)"
+            x-bind:class="order.uid === currentOrder?.order_uid && 'active'"
           ></button>
         </template>
       </div>
     </div>
 
-    <template  x-if="currentOrder !== null">
+    <template x-if="currentOrder !== null">
     <div class="order-box">
       <template x-for="[title, obj, keys] in [
         ['Delivery Info', currentOrder.delivery, LayoutSchema.delivery],
         ['Payment Info',  currentOrder.payment,  LayoutSchema.payment],
         ['Order Info',    currentOrder,          LayoutSchema.order]
       ]">
-      <div class="section-data">
-        <div class="section-title" x-text="title"></div>
+      <section class="section-data">
+        <h4 class="section-title" x-text="title"></h4>
         <div class="section-values">
           <template x-for="[key, name] in Object.entries(keys)">
           <template x-for="i in [name + ':', obj[key]]">
@@ -56,16 +77,16 @@
           </template>
           </template>
         </div>
-      </div>
+      </section>
       </template>
     </div>
     </template>
 
     <template  x-if="currentOrder !== null">
-    <div class="items">
-      <div class="section-title">Items</div>
+    <section class="items">
+      <h4 class="section-title">Items</h4>
       <template x-for="item in currentOrder.items">
-      <div class="item">
+      <section class="item">
         <div class="section-values">
           <template x-for="[key, name] in Object.entries(LayoutSchema.item)">
           <template x-for="i in [name + ':', item[key]]">
